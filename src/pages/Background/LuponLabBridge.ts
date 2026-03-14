@@ -7,6 +7,17 @@
 export const LUPON_LAB_REQUEST = 'LUPON_LAB_REQUEST';
 export const GET_PBJS_DATA = 'GET_PBJS_DATA';
 
+export interface LuponLabData {
+  version?: string | null;
+  adUnits?: any[];
+  bidders?: string[];
+  config?: any;
+  events?: any[];
+  errors?: string[];
+  timestamp?: number;
+  url?: string;
+}
+
 export function registerLuponLabBridge(): void {
   chrome.runtime.onMessageExternal.addListener(
     (message, sender, sendResponse) => {
