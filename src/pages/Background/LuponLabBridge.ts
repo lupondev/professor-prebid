@@ -1,43 +1,23 @@
 /**
  * Lupon Lab Bridge
  * Listens for requests from cdn.luponmedia.com/lab/inspector
- * and relays live pbjs data from the active publisher tab.
- *
- * Flow:
- *   Lab Inspector → chrome.runtime.sendMessage(LUPON_LAB_REQUEST)
- *   Background → chrome.tabs.sendMessage(active tab, GET_PBJS_DATA)
- *   Content/Injected → reads window.pbjs → returns data
- *   Background → responds back to Lab Inspector
+ * and relays live pbjs data from ANY publisher tab (not the Lab itself).
  */
 
 export const LUPON_LAB_REQUEST = 'LUPON_LAB_REQUEST';
-export const LUPON_LAB_RESPONSE = 'LUPON_LAB_RESPONSE';
 export const GET_PBJS_DATA = 'GET_PBJS_DATA';
 
-export interface LuponLabData {
-  version: string | null;
-  adUnits: any[];
-  bidders: string[];
-  config: any;
-  events: any[];
-  errors: string[];
-  timestamp: number;
-  url: string;
-}
-
-/**
- * Register the Lab Bridge listener in the background script.
- * Call this once during background script initialization.
- */
 export function registerLuponLabBridge(): void {
   chrome.runtime.onMessageExternal.addListener(
     (message, sender, sendResponse) => {
+
+      // PING — connection test
       if (message?.type === 'LUPON_LAB_PING') {
         sendResponse({ ok: true, version: '2.0.0' });
         return true;
       }
 
-      // Only accept messages from Lupon Lab
+      // Only LUPON_LAB_REQUEST from luponmedia.com
       if (
         message?.type !== LUPON_LAB_REQUEST ||
         !sender.origin?.includes('luponmedia.com')
@@ -45,23 +25,36 @@ export function registerLuponLabBridge(): void {
         return false;
       }
 
-      // Get the currently active tab
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0];
-        if (!activeTab?.id) {
-          sendResponse({ error: 'No active tab found' });
+      // Find publisher tab = any tab that is NOT luponmedia.com
+      // Try last focused window first, then all windows
+      chrome.tabs.query({}, (allTabs) => {
+        const publisherTabs = allTabs.filter(tab => {
+          if (!tab.url) return false;
+          // Exclude Lab/luponmedia tabs and chrome internal pages
+          if (tab.url.includes('luponmedia.com')) return false;
+          if (tab.url.startsWith('chrome://')) return false;
+          if (tab.url.startsWith('chrome-extension://')) return false;
+          return true;
+        });
+
+        if (!publisherTabs.length) {
+          sendResponse({
+            error: 'No publisher tab found — open novi.ba or another publisher in a tab first',
+          });
           return;
         }
 
-        // Ask content script on active tab to collect pbjs data
+        // Pick the most recently active publisher tab
+        const target = publisherTabs[publisherTabs.length - 1];
+
         chrome.tabs.sendMessage(
-          activeTab.id,
+          target.id!,
           { type: GET_PBJS_DATA },
           (response) => {
             if (chrome.runtime.lastError) {
               sendResponse({
-                error: chrome.runtime.lastError.message,
-                hint: 'Make sure the extension is active on this tab',
+                error: chrome.runtime.lastError.message + ' — try reloading the publisher page',
+                url: target.url,
               });
               return;
             }
