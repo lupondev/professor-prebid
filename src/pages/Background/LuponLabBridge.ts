@@ -60,70 +60,60 @@ export function registerLuponLabBridge(): void {
             let pbjs = w.pbjs;
             let namespace = 'pbjs';
 
-            // 2. DABPlus wrapper (used by novi.ba and adxbid publishers)
-            //    Instances: DABPlus8400, DABPlus8401, DABPlus8577, etc.
+            // 2. DABPlus wrapper (adxbid publishers: novi.ba etc)
             if (!pbjs || !pbjs.version) {
               const dabKey = Object.keys(w).find(k =>
-                /^DABPlus\d+$/.test(k) &&
-                w[k] &&
-                typeof w[k] === 'object' &&
-                w[k].adUnits
+                /^DABPlus\d+$/.test(k) && w[k]?.adUnits
               );
-              if (dabKey) {
-                pbjs = w[dabKey];
-                namespace = dabKey;
-              }
+              if (dabKey) { pbjs = w[dabKey]; namespace = dabKey; }
             }
 
-            // 3. Any object with requestBids + adUnits (generic Prebid)
+            // 3. Generic Prebid fallback
             if (!pbjs || !pbjs.version) {
               const genericKey = Object.keys(w).find(k => {
-                try {
-                  const v = w[k];
-                  return v && typeof v === 'object' && v.requestBids && v.adUnits;
-                } catch { return false; }
+                try { const v = w[k]; return v?.requestBids && v?.adUnits; } catch { return false; }
               });
-              if (genericKey) {
-                pbjs = w[genericKey];
-                namespace = genericKey;
-              }
+              if (genericKey) { pbjs = w[genericKey]; namespace = genericKey; }
             }
 
             if (!pbjs) {
-              return {
-                error: 'No Prebid instance found (tried pbjs, DABPlus*, generic)',
-                url: location.href,
-                timestamp: Date.now()
-              };
+              return { error: 'No Prebid instance found', url: location.href, timestamp: Date.now() };
             }
 
-            // Collect all DABPlus ad units if available
-            const allAdUnits: any[] = pbjs.adUnits || [];
+            // All DABPlus instances
             const dabInstances = Object.keys(w).filter(k => /^DABPlus\d+$/.test(k) && w[k]?.adUnits);
+
+            // Collect ad units from all instances
+            const allAdUnits: any[] = [];
+            const seenCodes = new Set<string>();
             dabInstances.forEach(k => {
-              if (k !== namespace && w[k]?.adUnits) {
-                allAdUnits.push(...(w[k].adUnits || []));
-              }
+              (w[k]?.adUnits || []).forEach((u: any) => {
+                if (!seenCodes.has(u.code)) { seenCodes.add(u.code); allAdUnits.push(u); }
+              });
             });
+            if (!allAdUnits.length) allAdUnits.push(...(pbjs.adUnits || []));
 
             // Collect events from all instances
             const allEvents: any[] = [];
             dabInstances.forEach(k => {
-              try {
-                const evts = w[k]?.getEvents?.() || [];
-                allEvents.push(...evts);
-              } catch {}
+              try { allEvents.push(...(w[k]?.getEvents?.() || [])); } catch {}
             });
             if (!allEvents.length) {
               try { allEvents.push(...(pbjs.getEvents?.() || [])); } catch {}
             }
 
-            const bidders = Array.from(new Set(
-              allEvents
-                .filter((e: any) => e.eventType === 'bidRequested')
-                .map((e: any) => e.args?.bidder)
-                .filter(Boolean)
-            )) as string[];
+            // Extract bidders — DABPlus stores bidder in args.bidder OR args.bids[].bidder
+            const bidderSet = new Set<string>();
+            allEvents
+              .filter((e: any) => e.eventType === 'bidRequested')
+              .forEach((e: any) => {
+                // Standard: e.args.bidder
+                if (e.args?.bidder) bidderSet.add(e.args.bidder);
+                // DABPlus: e.args.bids[].bidder
+                if (Array.isArray(e.args?.bids)) {
+                  e.args.bids.forEach((b: any) => { if (b?.bidder) bidderSet.add(b.bidder); });
+                }
+              });
 
             let config = {};
             try { config = pbjs.getConfig?.() || {}; } catch {}
@@ -131,7 +121,7 @@ export function registerLuponLabBridge(): void {
             return {
               version: pbjs.version || null,
               adUnits: allAdUnits,
-              bidders,
+              bidders: Array.from(bidderSet),
               config,
               events: allEvents,
               errors: w.__pbjsErrors || [],
@@ -146,8 +136,7 @@ export function registerLuponLabBridge(): void {
             sendResponse({ error: chrome.runtime.lastError.message, url: publisherTab.url });
             return;
           }
-          const result = results?.[0]?.result;
-          sendResponse(result || { error: 'executeScript returned no result', url: publisherTab.url });
+          sendResponse(results?.[0]?.result || { error: 'No result', url: publisherTab.url });
         });
       });
 
