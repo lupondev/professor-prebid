@@ -1,5 +1,5 @@
 import { useState, useContext, useMemo } from 'react';
-import type { AdUnit, EventRecord } from 'prebid.js/types.d.ts';
+import type { AdUnit, EventRecord } from 'prebid.js';
 import StateContext from '../../contexts/appStateContext';
 import { createQueryEngine, distinct, NUMERIC_FIELD_KEYS } from '../autocomplete/utils';
 

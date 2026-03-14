@@ -151,13 +151,13 @@ const BidOverWriteComponent = ({ debugConfigState, setDebugConfigState }: BidOve
       <Grid size={{ xs: 4.5, md: 4.5 }}>
         <FormControl sx={{ height: 1, width: 1, '& .MuiOutlinedInput-root': { height: 1, alignItems: 'baseline' } }}>
           <InputLabel>Select Bidder(s)</InputLabel>
-          <Select
+          <Select<string[]>
             multiple
             name="bidders"
             value={selectedBidders}
             onChange={handleBidderSelectionChange}
             input={<OutlinedInput label="Detected Bidders" />}
-            renderValue={(selected) => (
+            renderValue={(selected: string[]) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {selected.map((value, index) => (
                   <Chip
@@ -186,13 +186,13 @@ const BidOverWriteComponent = ({ debugConfigState, setDebugConfigState }: BidOve
       <Grid size={{ xs: 4.5, md: 4.5 }}>
         <FormControl sx={{ height: 1, width: 1, '& .MuiOutlinedInput-root': { height: 1, alignItems: 'baseline' } }}>
           <InputLabel>Select AdUnitCode(s)</InputLabel>
-          <Select
+          <Select<string[]>
             multiple
             name="adUnitCodes"
             value={selectedAdUnitCodes}
             onChange={handleAdunitSelectionChange}
             input={<OutlinedInput label="Detected AdUnit(s)" />}
-            renderValue={(selected) => (
+            renderValue={(selected: string[]) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {selected.map((value, index) => (
                   <Chip

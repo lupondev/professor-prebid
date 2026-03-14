@@ -1,11 +1,65 @@
-import React, { useContext } from 'react';
-import { List, ListItem, ListItemText, Checkbox, Button, Box, Typography, Paper } from '@mui/material';
+import React, { useContext, useState, useEffect } from 'react';
+import { List, ListItem, ListItemText, Checkbox, Button, Box, Typography, Paper, TextField } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from '../../theme/theme';
 import { ErrorBoundary } from 'react-error-boundary';
 import ErrorCardComponent from '../Shared/components/ErrorCardComponent';
 import { PAGES } from '../Shared/constants';
 import OptionsContext, { OptionsContextProvider } from '../Shared/contexts/optionsContext';
+
+const ANTHROPIC_API_KEY_STORAGE = 'anthropicApiKey';
+
+const ApiKeyOptions: React.FC = () => {
+  const [apiKey, setApiKey] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+      chrome.storage.sync.get([ANTHROPIC_API_KEY_STORAGE], (result) => {
+        if (result[ANTHROPIC_API_KEY_STORAGE]) {
+          setApiKey(result[ANTHROPIC_API_KEY_STORAGE]);
+        }
+      });
+    }
+  }, []);
+
+  const handleSaveApiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+      chrome.storage.sync.set({ [ANTHROPIC_API_KEY_STORAGE]: apiKey.trim() }, () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      });
+    }
+  };
+
+  return (
+    <Paper sx={{ p: 2, mt: 2 }}>
+      <Typography variant="h2" component="div" gutterBottom>
+        AI Copilot (Anthropic API key)
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        Store your Anthropic API key to use the AI Copilot tab. It is saved in Chrome sync (across your signed-in
+        devices). Get a key at console.anthropic.com.
+      </Typography>
+      <form onSubmit={handleSaveApiKey}>
+        <TextField
+          fullWidth
+          size="small"
+          type="password"
+          label="Anthropic API key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="sk-ant-..."
+          sx={{ mb: 1 }}
+        />
+        <Button type="submit" variant="outlined" color="primary">
+          {saved ? 'Saved' : 'Save API key'}
+        </Button>
+      </form>
+    </Paper>
+  );
+};
 
 const NaviOptions: React.FC<{}> = () => {
   const { selectedPopUpNavItems, setSelectedPopUpNavItems, selectedPanelNavItems, setSelectedPanelNavItems } = useContext(OptionsContext);
@@ -103,6 +157,7 @@ const Options: React.FC<{ title: string }> = ({ title }) => {
         <ErrorBoundary FallbackComponent={ErrorCardComponent}>
           <Box sx={{ backgroundColor: 'primary.light', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100vh', p: 1 }}>
             <NaviOptions />
+            <ApiKeyOptions />
           </Box>
         </ErrorBoundary>
       </OptionsContextProvider>

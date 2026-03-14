@@ -4,7 +4,7 @@ import ListItem from '@mui/material/ListItem';
 import Typography from '@mui/material/Typography';
 import Popover from '@mui/material/Popover';
 import StateContext from '../../../Shared/contexts/appStateContext';
-import { BidderRequest, EventRecord } from 'prebid.js/types.d.ts';
+import { BidderRequest, EventRecord } from 'prebid.js';
 import { BidderRequestWithStart } from './GanttChartComponent';
 
 const getNearestGridBarElement = (input: number, gridRef: React.MutableRefObject<HTMLElement>) => {

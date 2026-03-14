@@ -1,9 +1,9 @@
-import { Config, PrebidJS } from 'prebid.js';
+// Config and PrebidJS are re-exported from src/types/prebid-js.d.ts for other modules that import from 'prebid.js'
 import { POPUP_LOADED, EVENTS, PREBID_DETECTION_TIMEOUT_IFRAME, PREBID_DETECTION_TIMEOUT } from '../Shared/constants';
 import { sendWindowPostMessage, detectIframe } from '../Shared/utils';
 
 class Prebid {
-  globalPbjs: PrebidJS = window.pbjs;
+  globalPbjs: IGlobalPbjs = window.pbjs;
   namespace: string;
   frameId: string | null;
   lastTimeUpdateSentToContentScript: number = 0;
@@ -111,8 +111,8 @@ class Prebid {
     }
   };
 
-  getEventsObjUrl = () => {
-    const events = this.globalPbjs?.getEvents ? this.globalPbjs.getEvents() : this.events;
+  getEventsObjUrl = (eventsArray?: IPrebidDetails['events']) => {
+    const events = eventsArray ?? (this.globalPbjs?.getEvents ? this.globalPbjs.getEvents() : this.events);
     const string = `[${events
       .map((event) => {
         this.removeWindowFields(event);
@@ -134,19 +134,77 @@ class Prebid {
     return objectURL;
   };
 
+  /** Pull current ad units, bid responses, and winning bids from pbjs (for when popup opens after auctions already ran). */
+  getPulledEvents = (): IPrebidDetails['events'] => {
+    const pulled: IPrebidDetails['events'] = [];
+    try {
+      const adUnits = Array.isArray(this.globalPbjs?.adUnits) ? this.globalPbjs.adUnits : [];
+      if (adUnits.length > 0) {
+        pulled.push({
+          eventType: 'auctionInit',
+          args: {
+            adUnitCodes: adUnits.map((au: IPrebidAdUnit) => au?.code).filter(Boolean),
+            adUnits,
+            auctionEnd: undefined,
+            auctionId: 'pull',
+            auctionStatus: 'completed',
+            bidderRequests: [],
+            bidsReceived: [],
+            labels: [],
+            noBids: [],
+            timeout: this.globalPbjs?.getConfig?.()?.bidderTimeout ?? 0,
+            timestamp: Date.now(),
+            winningBids: [],
+          },
+          id: 'pull-init',
+          elapsedTime: 0,
+        } as IPrebidDetails['events'][0]);
+      }
+      const winningBids = typeof this.globalPbjs?.getAllWinningBids === 'function' ? this.globalPbjs.getAllWinningBids() : [];
+      winningBids.forEach((bid: IPrebidBid) => {
+        pulled.push({
+          eventType: 'bidWon',
+          args: bid,
+          id: 'pull-won',
+          elapsedTime: 0,
+        } as IPrebidDetails['events'][0]);
+      });
+      if (adUnits.length > 0 && typeof this.globalPbjs?.getBidResponsesForAdUnitCode === 'function') {
+        adUnits.forEach((adUnit: IPrebidAdUnit) => {
+          const resp = this.globalPbjs.getBidResponsesForAdUnitCode(adUnit?.code);
+          const bids = resp?.bids ?? [];
+          bids.forEach((bid: IPrebidBid) => {
+            pulled.push({
+              eventType: 'bidResponse',
+              args: bid,
+              id: 'pull-resp',
+              elapsedTime: 0,
+            } as IPrebidDetails['events'][0]);
+          });
+        });
+      }
+    } catch (e) {
+      console.warn('[Professor Prebid] getPulledEvents failed', e);
+    }
+    return pulled;
+  };
+
   sendDetailsToBackground = (): void => {
     this.globalPbjs.que.push(async () => {
-      const eventsUrl = this.getEventsObjUrl();
-      if (!eventsUrl) return;
       const config = this.globalPbjs.getConfig();
       const eids = this.globalPbjs.getUserIdsAsEids ? this.globalPbjs.getUserIdsAsEids() : [];
       const timeout = window.PREBID_TIMEOUT || null;
+      const eventBasedEvents = this.globalPbjs?.getEvents ? this.globalPbjs.getEvents() : this.events;
+      const pulledEvents = this.getPulledEvents();
+      const eventsToSend = eventBasedEvents?.length ? eventBasedEvents : pulledEvents;
+      const eventsUrl = this.getEventsObjUrl(eventsToSend) || (pulledEvents.length ? this.getEventsObjUrl(pulledEvents) : null);
+      if (!eventsUrl && !eventsToSend.length) return;
       const prebidDetail: IPrebidDetails = {
         config,
         debug: this.getDebugConfig(),
         eids,
-        events: [],
-        eventsUrl,
+        events: eventsToSend,
+        eventsUrl: eventsUrl || '',
         namespace: this.namespace,
         frameId: this.frameId,
         installedModules: this.globalPbjs.installedModules,
@@ -208,7 +266,9 @@ export const addEventListenersForPrebid = (frameId: string) => {
     detectIframe() ? PREBID_DETECTION_TIMEOUT_IFRAME : PREBID_DETECTION_TIMEOUT
   );
   const isPrebidInPage = () => {
-    const pbjsGlobals = window._pbjsGlobals || [];
+    const raw = window._pbjsGlobals || [];
+    const hasDefaultPbjs = typeof (window as any).pbjs?.getConfig === 'function';
+    const pbjsGlobals = (raw?.length > 0) ? raw : (hasDefaultPbjs ? ['pbjs'] : []);
 
     if (pbjsGlobals?.length > 0) {
       pbjsGlobals.forEach((global: string) => {
@@ -236,8 +296,8 @@ export interface IGlobalPbjs {
   getEvents: () => IPrebidDetails['events'];
   onEvent: Function;
   que: Function[];
-  getConfig: () => IPrebidDetails['config'];
-  getUserIdsAsEids: () => IPrebidDetails['eids'];
+  getConfig: () => IPrebidConfig;
+  getUserIdsAsEids: () => IPrebidEids[];
   setConfig: (args: Object) => void;
   version: string;
   adUnits: IPrebidAdUnit[];
@@ -622,13 +682,13 @@ export interface IPrebidDetails {
     | IPrebidPaapiBidEvent
     | IPrebidBidderDoneEventData
   )[];
-  config: Config;
-  eids: ReturnType<PrebidJS['getUserIdsAsEids']>;
+  config: IPrebidConfig;
+  eids: IPrebidEids[];
   debug: IPrebidDebugConfig;
   namespace: string;
   frameId: string | null;
   installedModules: string[];
-  bidderSettings: PrebidJS['bidderSettings'];
+  bidderSettings: IGlobalPbjs['bidderSettings'];
 }
 
 export interface IPrebidBidderSettings {
@@ -878,7 +938,7 @@ export interface IPrebidBidderRequest {
   userExt: unknown;
 }
 
-interface IPrebidEids {
+export interface IPrebidEids {
   source: string;
   uids: IUuids[];
 }
@@ -890,3 +950,6 @@ interface IUuids {
     [key: string]: string;
   };
 }
+
+import { registerLuponLabReader } from './LuponLabReader';
+registerLuponLabReader();

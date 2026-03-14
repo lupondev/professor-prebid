@@ -5,7 +5,7 @@ import { replaceLastToken } from '../autocomplete/utils';
 import { AutoComplete } from '../autocomplete/AutoComplete';
 import DownloadIcon from '@mui/icons-material/Download';
 import { download } from '../../utils';
-import { Bid } from 'prebid.js/types.d.ts';
+import { Bid } from 'prebid.js';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { SxProps } from '@mui/material';

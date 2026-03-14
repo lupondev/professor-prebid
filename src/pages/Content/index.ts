@@ -1,3 +1,4 @@
+import { registerLuponLabCollector } from './LuponLabCollector';
 import { CONSOLE_TOGGLE, PBJS_NAMESPACE_CHANGE, EVENTS, SAVE_MASKS, POPUP_LOADED } from '../Shared/constants';
 import { IPrebidDetails } from '../Injected/prebid';
 import { detectIframe, sendWindowPostMessage } from '../Shared/utils';
@@ -87,6 +88,7 @@ const setUpListeners = () => {
   listenToChromeRuntimeMessages();
 };
 injectScript();
+registerLuponLabCollector();
 
 if (detectIframe() === false) {
   setUpListeners();

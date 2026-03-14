@@ -47,6 +47,11 @@ export const fetchEvents = async (
       setSyncInfo(`try to download Events from ${prebid.eventsUrl}`);
       setDownloading('true');
       try {
+        if (prebid.eventsUrl.startsWith('blob:')) {
+          setSyncInfo(null);
+          setDownloading('false');
+          continue;
+        }
         if (prebid && prebid.eventsUrl in downloadingUrls) {
           // skip download if already downloading or from another domain or prebid is undefined
         } else {

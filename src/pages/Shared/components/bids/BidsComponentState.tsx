@@ -1,7 +1,7 @@
 import { useState, useContext, useMemo, useCallback } from 'react';
 import AppStateContext from '../../contexts/appStateContext';
 import { createQueryEngine, distinct, getSortValue, getWidthXHeightStringFromBid, NUMERIC_FIELD_KEYS } from '../autocomplete/utils';
-import { Bid } from 'prebid.js/types.d.ts';
+import { Bid } from 'prebid.js';
 
 export const BID_FIELD_MAP = {
   bidder: (b: any) => b?.bidder,

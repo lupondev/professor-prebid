@@ -77,12 +77,12 @@ const BidderFilter = ({ debugConfigState, setDebugConfigState }: IBidderFilterPr
       <Grid size={{ xs: 11, md: 11 }}>
         <FormControl sx={{ display: 'flex' }}>
           <InputLabel>Filter Bidder(s)</InputLabel>
-          <Select
+          <Select<string[]>
             multiple
             value={selectedBidders}
             onChange={handleSelectionChange}
             input={<OutlinedInput label="Detected Bidders" />}
-            renderValue={(selected) => (
+            renderValue={(selected: string[]) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {selected.map((value) => (
                   <Chip

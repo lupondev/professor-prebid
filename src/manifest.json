@@ -15,7 +15,7 @@
       ],
       "all_frames": true,
       "match_about_blank": false,
-      "run_at": "document_idle",
+      "run_at": "document_start",
       "js": [
         "contentScript.bundle.js"
       ]
@@ -24,8 +24,15 @@
   "devtools_page": "devtools.html",
   "host_permissions": [
     "https://*/",
-    "http://*/"
+    "http://*/",
+    "https://api.anthropic.com/*"
   ],
+  "externally_connectable": {
+    "matches": ["https://cdn.luponmedia.com/*"]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.anthropic.com"
+  },
   "incognito": "split",
   "icons": {
     "128": "assets/img/icon-128.png"

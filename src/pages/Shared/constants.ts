@@ -8,6 +8,7 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import DifferenceIcon from '@mui/icons-material/Difference';
 import LinkIcon from '@mui/icons-material/Link';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
 
@@ -83,8 +84,9 @@ export const PAGES: {
     muiName: string;
   };
   beta: boolean;
-}[] = [
+  }[] = [
     { label: 'Ad Units', path: '', Icon: AdUnitsOutlinedIcon, beta: false },
+    { label: 'AI Copilot', path: 'copilot', Icon: SmartToyOutlinedIcon, beta: false },
     { label: 'Bids', path: 'bids', Icon: AccountBalanceOutlinedIcon, beta: false },
     { label: 'Config', path: 'config', Icon: SettingsOutlinedIcon, beta: false },
     { label: 'Events', path: 'events', Icon: WarningAmberOutlinedIcon, beta: false },

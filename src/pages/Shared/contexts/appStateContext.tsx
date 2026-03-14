@@ -3,7 +3,7 @@ import { useMediaQuery, useTheme } from '@mui/material';
 import InspectedPageContext from './inspectedPageContext';
 import { IGoogleAdManagerDetails } from '../../Injected/googleAdManager';
 import { IPrebidDetails } from '../../Injected/prebid';
-import type { EventRecord, Config } from 'prebid.js/types.d.ts';
+import type { EventRecord, Config } from 'prebid.js';
 
 declare global {
   interface Document {

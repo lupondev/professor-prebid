@@ -1,3 +1,4 @@
+import { registerLuponLabBridge } from './LuponLabBridge';
 import { BadgeService } from './BadgeService';
 import { MessageHandler } from './MessageHandler';
 import { TabContextService, debounce } from './TabContextService';
@@ -64,6 +65,7 @@ class Background {
   persistInStorageThrottled = debounce(() => this.tabContextService.persist(), 1500);
 
   constructor() {
+    registerLuponLabBridge();
     this.backgroundService.start();
   }
 

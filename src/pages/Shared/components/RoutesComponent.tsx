@@ -6,6 +6,7 @@ import ConfigComponent from './config/ConfigComponent';
 import TimelineComponent from './timeline/TimeLineComponent';
 import BidsComponent from './bids/BidsComponent';
 import ToolsComponent from './tools/ToolsComponent';
+import AICopilotComponent from './aiCopilot/AICopilotComponent';
 import EventsComponent from './auctionDebugEvents/EventsComponent';
 import { Routes, Route } from 'react-router-dom';
 import InitiatorComponent from './initiator/InitiatorComponent';
@@ -21,6 +22,7 @@ const RoutesComponent = (): JSX.Element => {
       <Route path="timeline" element={<TimelineComponent />}></Route>
       <Route path="config" element={<ConfigComponent />} />
       <Route path="userId" element={<UserIdsComponent />} />
+      <Route path="copilot" element={<AICopilotComponent />} />
       <Route path="tools" element={<ToolsComponent />} />
       <Route path="events" element={<EventsComponent />} />
       <Route path="events" element={<EventsComponent />} />
