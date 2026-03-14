@@ -2,13 +2,15 @@ import { createTheme } from '@mui/material/styles';
 
 const palette = {
   primary: {
-    // main: '#1976d2',
-    main: '#438ED9',
-    // light: '#87CEEB',
-    light: '#ABDDF1',
+    main: '#7c3aed',
+    light: '#a78bfa',
   },
-  secondary: { main: '#f99b0c' },
+  secondary: { main: '#3b82f6' },
   info: { main: '#ecf3f5' },
+  background: {
+    default: '#08080f',
+    paper: '#0d0d1a',
+  },
 };
 
 const typography = {

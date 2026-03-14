@@ -22,7 +22,7 @@ export const Popup = (): JSX.Element => {
 
   return (
     <BrowserRouter>
-      <Box sx={{ overflowX: 'auto', backgroundColor: 'primary.light' }}>
+      <Box sx={{ overflowX: 'auto', backgroundColor: '#08080f' }}>
         <NavBar />
         {(!prebids || !prebids[pbjsNamespace]) && <NoPrebidCardComponent />}
         {prebids && prebids[pbjsNamespace] && <RoutesComponent />}

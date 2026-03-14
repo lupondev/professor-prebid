@@ -33,7 +33,7 @@ export function registerLuponLabBridge(): void {
   chrome.runtime.onMessageExternal.addListener(
     (message, sender, sendResponse) => {
       if (message?.type === 'LUPON_LAB_PING') {
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, version: '2.0.0' });
         return true;
       }
 

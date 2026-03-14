@@ -10,7 +10,7 @@ export const NavBar = (): JSX.Element => {
       sx={{
         height: '40px',
         position: 'relative',
-        backgroundColor: 'background.paper',
+        backgroundColor: '#0d0d1a',
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-between',

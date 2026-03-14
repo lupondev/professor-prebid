@@ -28,7 +28,11 @@
     "https://api.anthropic.com/*"
   ],
   "externally_connectable": {
-    "matches": ["https://cdn.luponmedia.com/*", "http://localhost/*"]
+    "matches": [
+      "https://cdn.luponmedia.com/*",
+      "http://localhost/*",
+      "https://*.luponmedia.com/*"
+    ]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.anthropic.com"
@@ -38,7 +42,8 @@
     "128": "assets/img/icon-128.png"
   },
   "manifest_version": 3,
-  "name": "Professor Prebid",
+  "name": "Lupon Intelligence",
+  "description": "Ad ops intelligence for Lupon Media publishers",
   "options_page": "options.html",
   "permissions": [
     "webNavigation",
@@ -47,7 +52,7 @@
     "tabs",
     "scripting"
   ],
-  "version": "{__APP_VERSION__}",
+  "version": "2.0.0",
   "web_accessible_resources": [
     {
       "resources": [

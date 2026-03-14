@@ -1,7 +1,7 @@
 {
   "name": "professor-prebid",
-  "version": "1.0.0",
-  "description": "Prebid's next-gen debugging tool",
+  "version": "2.0.0",
+  "description": "Ad ops intelligence for Lupon Media publishers",
   "license": "ISC",
   "repository": {
     "type": "git",

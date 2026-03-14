@@ -11,6 +11,7 @@ import EventsComponent from './auctionDebugEvents/EventsComponent';
 import { Routes, Route } from 'react-router-dom';
 import InitiatorComponent from './initiator/InitiatorComponent';
 import PbjsVersionInfoComponent from './pbjsVersionInfo/PbjsVersionInfoComponent';
+import { LuponAIWrapper } from '../../Popup/LuponAIWrapper';
 
 const RoutesComponent = (): JSX.Element => {
   return (
@@ -22,6 +23,7 @@ const RoutesComponent = (): JSX.Element => {
       <Route path="timeline" element={<TimelineComponent />}></Route>
       <Route path="config" element={<ConfigComponent />} />
       <Route path="userId" element={<UserIdsComponent />} />
+      <Route path="ai" element={<LuponAIWrapper />} />
       <Route path="copilot" element={<AICopilotComponent />} />
       <Route path="tools" element={<ToolsComponent />} />
       <Route path="events" element={<EventsComponent />} />
