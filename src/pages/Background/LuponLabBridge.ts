@@ -29,12 +29,19 @@ export function registerLuponLabBridge(): void {
       }
 
       chrome.tabs.query({}, (allTabs) => {
-        const publisherTab = allTabs.find(tab => {
-          if (!tab.url || !tab.id) return false;
-          if (tab.url.includes('luponmedia.com')) return false;
-          if (tab.url.startsWith('chrome')) return false;
-          return true;
-        });
+        // Sort by lastAccessed descending, pick most recently used publisher tab
+        const publisherTabs = allTabs
+          .filter(tab => {
+            if (!tab.url || !tab.id) return false;
+            if (tab.url.includes('luponmedia.com')) return false;
+            if (tab.url.startsWith('chrome')) return false;
+            if (tab.url.includes('rubiconproject.com')) return false;
+            if (tab.url.includes('cloudflare.com')) return false;
+            return true;
+          })
+          .sort((a, b) => ((b as chrome.tabs.Tab & { lastAccessed?: number }).lastAccessed || 0) - ((a as chrome.tabs.Tab & { lastAccessed?: number }).lastAccessed || 0));
+
+        const publisherTab = publisherTabs[0];
 
         if (!publisherTab?.id) {
           sendResponse({ error: 'No publisher tab found — open a publisher page first' });
