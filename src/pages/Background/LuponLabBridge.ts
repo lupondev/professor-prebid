@@ -32,6 +32,11 @@ export interface LuponLabData {
 export function registerLuponLabBridge(): void {
   chrome.runtime.onMessageExternal.addListener(
     (message, sender, sendResponse) => {
+      if (message?.type === 'LUPON_LAB_PING') {
+        sendResponse({ ok: true });
+        return true;
+      }
+
       // Only accept messages from Lupon Lab
       if (
         message?.type !== LUPON_LAB_REQUEST ||

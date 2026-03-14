@@ -28,7 +28,7 @@
     "https://api.anthropic.com/*"
   ],
   "externally_connectable": {
-    "matches": ["https://cdn.luponmedia.com/*"]
+    "matches": ["https://cdn.luponmedia.com/*", "http://localhost/*"]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.anthropic.com"
