@@ -118,6 +118,9 @@ export function registerLuponLabBridge(): void {
             let config = {};
             try { config = pbjs.getConfig?.() || {}; } catch {}
 
+            console.log('[LuponLab] events sample:', JSON.stringify(allEvents.slice(0, 3)));
+            console.log('[LuponLab] bidders found:', Array.from(bidderSet));
+
             return {
               version: pbjs.version || null,
               adUnits: allAdUnits,
