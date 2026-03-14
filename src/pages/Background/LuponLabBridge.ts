@@ -51,7 +51,8 @@ export function registerLuponLabBridge(): void {
         }
 
         chrome.scripting.executeScript({
-          target: { tabId: publisherTab.id! },
+          target: { tabId: publisherTab.id!, allFrames: false },
+          world: 'MAIN',
           func: () => {
             const w = window as any;
 
