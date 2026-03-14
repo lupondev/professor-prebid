@@ -58,18 +58,38 @@ export function registerLuponLabBridge(): void {
         // Pick the most recently active publisher tab
         const target = publisherTabs[publisherTabs.length - 1];
 
-        chrome.tabs.sendMessage(
-          target.id!,
-          { type: GET_PBJS_DATA },
-          (response) => {
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: target.id! },
+            func: () => {
+              const pbjs = (window as any).pbjs;
+              if (!pbjs)
+                return { error: 'window.pbjs not found', url: location.href };
+              return {
+                version: pbjs.version,
+                adUnits: pbjs.adUnits || [],
+                bidders: Array.from(
+                  new Set(
+                    (pbjs.getEvents?.() || [])
+                      .filter((e: any) => e.eventType === 'bidRequested')
+                      .map((e: any) => e.args?.bidder)
+                      .filter(Boolean)
+                  )
+                ),
+                config: pbjs.getConfig?.() || {},
+                events: pbjs.getEvents?.() || [],
+                errors: (window as any).__pbjsErrors || [],
+                url: location.href,
+                timestamp: Date.now(),
+              };
+            },
+          },
+          (results) => {
             if (chrome.runtime.lastError) {
-              sendResponse({
-                error: chrome.runtime.lastError.message + ' — try reloading the publisher page',
-                url: target.url,
-              });
+              sendResponse({ error: chrome.runtime.lastError.message });
               return;
             }
-            sendResponse(response);
+            sendResponse(results?.[0]?.result ?? { error: 'No result' });
           }
         );
       });
