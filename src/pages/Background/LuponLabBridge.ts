@@ -10,6 +10,7 @@ export interface LuponLabData {
   errors: string[];
   timestamp: number;
   url: string;
+  namespace?: string;
 }
 
 export function registerLuponLabBridge(): void {
@@ -29,7 +30,6 @@ export function registerLuponLabBridge(): void {
       }
 
       chrome.tabs.query({}, (allTabs) => {
-        // Sort by lastAccessed descending, pick most recently used publisher tab
         const publisherTabs = allTabs
           .filter(tab => {
             if (!tab.url || !tab.id) return false;
@@ -39,7 +39,9 @@ export function registerLuponLabBridge(): void {
             if (tab.url.includes('cloudflare.com')) return false;
             return true;
           })
-          .sort((a, b) => ((b as chrome.tabs.Tab & { lastAccessed?: number }).lastAccessed || 0) - ((a as chrome.tabs.Tab & { lastAccessed?: number }).lastAccessed || 0));
+          .sort((a, b) =>
+            ((b as any).lastAccessed || 0) - ((a as any).lastAccessed || 0)
+          );
 
         const publisherTab = publisherTabs[0];
 
@@ -49,28 +51,93 @@ export function registerLuponLabBridge(): void {
         }
 
         chrome.scripting.executeScript({
-          target: { tabId: publisherTab.id },
+          target: { tabId: publisherTab.id! },
           func: () => {
             const w = window as any;
-            const pbjs = w.pbjs;
-            if (!pbjs) {
-              return { error: 'window.pbjs not found on this page', url: location.href, timestamp: Date.now() };
+
+            // 1. Standard window.pbjs
+            let pbjs = w.pbjs;
+            let namespace = 'pbjs';
+
+            // 2. DABPlus wrapper (used by novi.ba and adxbid publishers)
+            //    Instances: DABPlus8400, DABPlus8401, DABPlus8577, etc.
+            if (!pbjs || !pbjs.version) {
+              const dabKey = Object.keys(w).find(k =>
+                /^DABPlus\d+$/.test(k) &&
+                w[k] &&
+                typeof w[k] === 'object' &&
+                w[k].adUnits
+              );
+              if (dabKey) {
+                pbjs = w[dabKey];
+                namespace = dabKey;
+              }
             }
-            const events = pbjs.getEvents?.() || [];
+
+            // 3. Any object with requestBids + adUnits (generic Prebid)
+            if (!pbjs || !pbjs.version) {
+              const genericKey = Object.keys(w).find(k => {
+                try {
+                  const v = w[k];
+                  return v && typeof v === 'object' && v.requestBids && v.adUnits;
+                } catch { return false; }
+              });
+              if (genericKey) {
+                pbjs = w[genericKey];
+                namespace = genericKey;
+              }
+            }
+
+            if (!pbjs) {
+              return {
+                error: 'No Prebid instance found (tried pbjs, DABPlus*, generic)',
+                url: location.href,
+                timestamp: Date.now()
+              };
+            }
+
+            // Collect all DABPlus ad units if available
+            const allAdUnits: any[] = pbjs.adUnits || [];
+            const dabInstances = Object.keys(w).filter(k => /^DABPlus\d+$/.test(k) && w[k]?.adUnits);
+            dabInstances.forEach(k => {
+              if (k !== namespace && w[k]?.adUnits) {
+                allAdUnits.push(...(w[k].adUnits || []));
+              }
+            });
+
+            // Collect events from all instances
+            const allEvents: any[] = [];
+            dabInstances.forEach(k => {
+              try {
+                const evts = w[k]?.getEvents?.() || [];
+                allEvents.push(...evts);
+              } catch {}
+            });
+            if (!allEvents.length) {
+              try { allEvents.push(...(pbjs.getEvents?.() || [])); } catch {}
+            }
+
+            const bidders = Array.from(new Set(
+              allEvents
+                .filter((e: any) => e.eventType === 'bidRequested')
+                .map((e: any) => e.args?.bidder)
+                .filter(Boolean)
+            )) as string[];
+
+            let config = {};
+            try { config = pbjs.getConfig?.() || {}; } catch {}
+
             return {
               version: pbjs.version || null,
-              adUnits: pbjs.adUnits || [],
-              bidders: Array.from(new Set(
-                events
-                  .filter((e: any) => e.eventType === 'bidRequested')
-                  .map((e: any) => e.args?.bidder)
-                  .filter(Boolean)
-              )),
-              config: pbjs.getConfig?.() || {},
-              events: events,
+              adUnits: allAdUnits,
+              bidders,
+              config,
+              events: allEvents,
               errors: w.__pbjsErrors || [],
               url: location.href,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              namespace,
+              dabInstances
             };
           }
         }, (results) => {
@@ -79,11 +146,7 @@ export function registerLuponLabBridge(): void {
             return;
           }
           const result = results?.[0]?.result;
-          if (!result) {
-            sendResponse({ error: 'executeScript returned no result', url: publisherTab.url });
-            return;
-          }
-          sendResponse(result);
+          sendResponse(result || { error: 'executeScript returned no result', url: publisherTab.url });
         });
       });
 
